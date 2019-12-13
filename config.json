@@ -1,0 +1,25 @@
+{
+    "UDP_INFO": {
+        "Host": "0.0.0.0",
+        "Port": 9000
+    },
+    "EVENT_MAP": {
+        "Main" : {},
+        "Handler" : {"name": "handler", "path": "src/modules/handler"},
+        "Loader" : {"name": "loader", "path": "src/modules/loader"}
+    },
+    "MODELS": [
+        {"name": "User", "path": "src/models/user"}
+    ],
+    "MYSQL": {
+        "Conf": {
+            "host": "47.98.146.29",
+            "port": 3306,
+            "user": "xingw",
+            "password": "yuxingwei",
+            "database":"game_log",
+            "connectionLimit": 20
+        },
+        "MaxLimit":20
+    } 
+}

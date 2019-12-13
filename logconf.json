@@ -1,0 +1,14 @@
+{
+    "appenders": {
+        "debug": {
+            "type": "DateFile",
+            "filename": "./data/logs/debug.log",
+            "alwaysIncludePattern": true,
+            "keepFileExt": true,
+            "daysToKeep": 30
+        }
+    },
+    "categories": {
+        "default": { "appenders": ["debug"], "level": "debug" }
+    }
+}
