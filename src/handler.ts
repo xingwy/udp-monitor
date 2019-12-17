@@ -7,7 +7,6 @@ import * as Logger from "./lib/log";
 import * as Loader from "./loader";
 import {Task} from "./modules/common/task";
 
-console.log(Task);
 // 加载业务模块
 const handleEvent: any = Loader.loaderModules();
 

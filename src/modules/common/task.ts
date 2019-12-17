@@ -1,4 +1,6 @@
-import { msgpack } from "../../lib/msgpack";
+/**
+ * 任务队列
+ */
 
 export class Task {
     private taskQuene: any[];
