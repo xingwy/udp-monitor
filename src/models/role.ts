@@ -1,10 +1,11 @@
 /**
  * 角色表
  */
-const Oplog = {
+const Role = {
     // 字段
     fields: [
         {name: "role_id", type: "INT", unique: true},
+        {name: "User", type: "CHAR(20)", unique: true},
     ],
     // 索引 多列和单列
     indexs: ["role_id"],
@@ -15,4 +16,4 @@ const Oplog = {
     name: "role_id",
 };
 
-export { Oplog as Mod };
+export { Role as Mod };

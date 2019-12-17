@@ -4,12 +4,14 @@
 const Oplog = {
     // 字段
     fields: [
-        {name: "index_inc", type: "INT",  increment: true, unique: true},
+        {name: "_id", type: "INT", unique: true},
+        {name: "CreateTime", type: "INT"},
+        {name: "Content", type: "VARCHAR(100)"},
     ],
     // 索引 多列和单列
-    indexs: ["index_inc"],
+    indexs: ["_id"],
     // 主键
-    primary_key: ["index_inc"],
+    primary_key: ["_id"],
     // 外键
     foreign_key: [],
     name: "oplog",

@@ -5,11 +5,19 @@
     },
     "EVENT_MAP": {
         "Main" : {},
-        "Handler" : {"name": "handler", "path": "src/modules/handler"},
-        "Loader" : {"name": "loader", "path": "src/modules/loader"}
+        "Handler" : {"name": "handler", "path": "src/handler"},
+        "Loader" : {"name": "loader", "path": "src/loader"}
     },
     "MODELS": [
-        {"name": "User", "path": "src/models/user"}
+        {"name": "tskey", "path": "src/models/tskey"},
+        {"name": "oplog", "path": "src/models/oplog"},
+        {"name": "role", "path": "src/models/role"},
+        {"name": "acc_login", "path": "src/models/acc_login"}
+    ],
+    "MODULES": [
+        {"name": "oplog", "path": "src/modules/oplog"},
+        {"name": "role", "path": "src/modules/role"},
+        {"name": "update_log", "path": "src/modules/update_log"}
     ],
     "MYSQL": {
         "Conf": {

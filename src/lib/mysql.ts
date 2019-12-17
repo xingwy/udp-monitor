@@ -5,6 +5,7 @@
 //  模块引用
 import * as Mysql from "mysql";
 import * as logger from "./log";
+import * as util from "./util";
 
 // 配置
 const config = require("../../config.json");
@@ -51,19 +52,15 @@ function exec(sql: string, opt: Object = {}, name: string = MYSQL_ConfInfo.datab
                         logger.error(`数据库操作失败，执行语句：${sql}，错误信息：${JSON.stringify(err_query)}`);
                     }
                     ok(res_query);
+                    res_con.release();
                 };
-                isEmptyObject(opt) ? res_con.query(sql, callback) : res_con.query(sql, opt, callback);
+                util.isEmptyObject(opt) ? res_con.query(sql, callback) : res_con.query(sql, opt, callback);
             });
         } catch (e) {
+            logger.error(`获取连接池失败：${sql}，错误信息：${JSON.stringify(e)}`);
         }
     });
 }
 
-function isEmptyObject(opt: Object): boolean {
-    if (JSON.stringify(opt) === "{}") {
-        return false;
-    }
-    return true;
-}
 // 导出一个执行命令API  exec(sql);
 export { exec };

@@ -13,9 +13,10 @@ import * as MsgPack from "./msgpack";
 const config = require("../../config.json");
 const UDP_INFO: {Port: number, Host: string} = config.UDP_INFO;
 const EVENT_MAP: {Handler: {name: string, path: string}} = config.EVENT_MAP;
+// Todo 处理对应的数据  存入数据库
+const handler = require(Path.join(process.cwd(), EVENT_MAP.Handler.path));
 
-
-// 
+// UDP服务
 const server = Dgram.createSocket("udp4");
 
 server.on("connect", () => {
@@ -29,11 +30,10 @@ server.on("listening", () => {
 
 server.on("message", (msg: Buffer, rinfo: Dgram.RemoteInfo) => {
     // 处理消息
-    // Todo 处理对应的数据  存入数据库
-    const handler = require(Path.join(process.cwd(), EVENT_MAP.Handler.path));
-    // Todo 数据转换
+    // 数据转换
     const data = JSON.parse(msg.toString());
-    handler.execute(data);
+    // 加入任务队列
+    handler.task.pushTask(data);
 });
 
 server.on("error", (err: Object) => {

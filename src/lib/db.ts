@@ -23,7 +23,6 @@ async function syncModels(): Promise<any> {
             }
             modelMap.set(r.Tables_in_game_log, r);
         });
-        console.log(modelMap);
         return res;
     } catch (err) {
         logger.error(`同步数据表失败，原因：${err}`);
@@ -44,7 +43,7 @@ async function CreateModel(model: string, opt: any, recreate: boolean = false): 
         await syncModels();
         return res;
     } catch (err) {
-        logger.error(`新建数据表失败，原因：${err}`);
+        logger.error(`新建数据表失败，原因：${err},`);
         return false;
     }
 }
@@ -57,10 +56,17 @@ async function CreateModel(model: string, opt: any, recreate: boolean = false): 
 async function Insert(model: string, opt: Object): Promise<any> {
     // 插入数据
     try {
-        if (!modelMap.has(model)) {
-            CreateModel(model, schemaMap.get(model));
+        const index = model.lastIndexOf("_");
+        let schemaName = model;
+        if (index !== -1) {
+            schemaName = model.slice(0, index);
         }
-        const data = fieldsCheck(model, opt);
+
+        if (!modelMap.has(model)) {
+            // 处理模型名称为 name_YYYYMMDD 格式的数据
+            await CreateModel(model, schemaMap.get(schemaName));
+        }
+        const data = fieldsCheck(schemaName, opt);
         if (!data) {
             throw new Error(`字段检查失败`);
         }
@@ -70,18 +76,68 @@ async function Insert(model: string, opt: Object): Promise<any> {
     }
 }
 
-async function Update(model: string, opt: Object): Promise<any> {
+async function Update(model: string, cond: Object, opt: Object): Promise<any> {
+    // 更新数据
+    try {
+        if (!modelMap.has(model)) {
+            // 处理模型名称为 name-YYYYMMDD 格式的数据
+            const index = model.lastIndexOf("_");
+            let schemaName = model;
+            if (index !== -1) {
+                schemaName = model.slice(0, index);
+            }
+
+            await CreateModel(model, schemaMap.get(schemaName));
+        }
+        // 检查元素是否存在
+        const exist = await Find(model, cond, opt);
+        if (!exist.length) {
+            throw new Error("无数据");
+        }
+
+        const condition: string = parseCond(cond);
+        const value: string = parseSetField(opt);
+        return await DB.exec(`UPDATE ${model} ${value} ${condition}`);
+    } catch (err) {
+        logger.error(`更新数据失败, 模型名称：${model}, 源数据：${JSON.stringify(opt)}, 原因：${err}`);
+    }
     return false;
 }
 async function Delete(model: string, opt: Object): Promise<any> {
     return false;
 }
-async function Find(model: string, opt: Object): Promise<any> {
-    return false;
+async function Find(model: string, cond: Object, opt?: Object): Promise<any> {
+    try {
+        if (!modelMap.has(model)) {
+            // 处理模型名称为 name-YYYYMMDD 格式的数据
+            const index = model.lastIndexOf("_");
+            let schemaName = model;
+            if (index !== -1) {
+                schemaName = model.slice(0, index);
+            }
+            await CreateModel(model, schemaMap.get(schemaName));
+        }
+        const condition: string = parseCond(cond);
+        const field: string = parseNeedField(opt);
+        return await DB.exec(`SELECT ${(field)} FROM ${model} ${condition}`);
+    } catch (err) {
+        logger.error(`查询数据失败, 模型名称：${model}, 条件：${JSON.stringify(cond)}, 原因：${err}`);
+    }
+    return [];
 }
 
-async function FindOne(model: string, opt: Object): Promise<any> {
-    return false;
+async function FindOne(model: string, cond: Object, opt?: Object): Promise<any> {
+    try {
+        const result = await Find(model, cond, opt);
+        if (result.length === 1) {
+            return result[0];
+        } else if (result.length > 1) {
+            throw new Error("查询结果不唯一");
+        }
+    } catch (err) {
+        logger.error(`查询单条数据失败, 模型名称：${model}, 条件：${JSON.stringify(cond)}, 原因：${err}`);
+    }
+    return {};
 }
 /**
  * 
@@ -91,7 +147,6 @@ function parseTabOpt(opt: {fields: any[], indexs: string[], primary_key: string[
     // 字段描述
     let str: string = "";
     const fields: any[] = opt.fields;
-
     fields.forEach((f) => {
         str += `${f.name} ${f.type}`;
 
@@ -124,7 +179,9 @@ function parseTabOpt(opt: {fields: any[], indexs: string[], primary_key: string[
         str += `INDEX (${indexs.join(",")}),`;
     }
     // 删除末尾 符号
-    str = str.substring(0, str.length - 1);
+    if (str.length > 0) {
+        str = str.substring(0, str.length - 1);
+    }
     return str;
 }
 
@@ -135,6 +192,7 @@ function parseTabOpt(opt: {fields: any[], indexs: string[], primary_key: string[
  */
 function fieldsCheck(model: string, opt: any): any {
     // 失败返回false值， 成功模型实例对象
+
     if (!schemaMap.has(model)) {
         return false;
     }
@@ -175,6 +233,63 @@ function fieldFormat(opt: any): string {
     value = value.substring(0, value.length - 1);
     return `(${key}) VALUES (${value});`;
 }
+
+function parseCond(opt: Object): string {
+    let str: string = "";
+    // tslint:disable-next-line:forin
+    for (const k in opt) {
+        if (typeof opt[k] !== "string") {
+            // 非字符数据处理
+            str += `${k}=${opt[k]},`;
+        } else {
+            str += `${k}='${opt[k]}',`;
+        }
+    }
+    // 删除末尾 符号
+    if (str.length > 0) {
+        str = "WHERE " + str.substring(0, str.length - 1);
+    }
+
+    return str;
+}
+
+function parseNeedField(opt: Object): string {
+    let str: string = "";
+    // tslint:disable-next-line:forin
+    for (const k in opt) {
+        if (opt[k]) {
+            str += `${k},`;
+        }
+
+    }
+    // 删除末尾 符号
+    if (str.length > 0) {
+        str = str.substring(0, str.length - 1);
+    } else {
+        str = "*";
+    }
+
+    return str;
+}
+
+function parseSetField(opt: Object): string {
+    let str = "";
+
+    for (const k in opt) {
+        if (typeof opt[k] !== "string") {
+            // 非字符数据处理
+            str += `${k}=${opt[k]},`;
+        } else {
+            str += `${k}='${opt[k]}',`;
+        }
+    }
+    // 删除末尾 符号
+    if (str.length > 0) {
+        str = "SET " + str.substring(0, str.length - 1);
+    }
+    return str;
+}
+
 async function schemaInit(opt: any[]): Promise<void> {
     // schemaMap init 缓存表配置
     opt.forEach( async (o) => {
@@ -182,7 +297,6 @@ async function schemaInit(opt: any[]): Promise<void> {
             schemaMap.set(o.name, o.mod);
         }
     });
-    console.log(schemaMap);
     return ;
 }
 

@@ -67,12 +67,12 @@
  
         
         "indent":[true, "spaces", 4],
-        "max-classes-per-file":[true,1],
+        "max-classes-per-file":[true,2],
         "max-file-line-count":[true,1000],
         "max-line-length":[true,300],
         "no-default-export":false,
         "no-duplicate-imports":true,
- 
+        "prefer-const": false,
         
         "align":[true,"parameters","arguments","statements","members","elements"],
         "array-type":[true,"array"],
